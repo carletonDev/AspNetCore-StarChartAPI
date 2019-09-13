@@ -29,98 +29,41 @@ namespace StarChart.Controllers
         }
 
         // GET: api/CelestialObject/5
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetCelestialObject([FromRoute] int id)
+        [HttpGet("{id:int}", Name="GetById")]
+        public IActionResult GetById(int id)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
 
-            var celestialObject = await _context.CelestialObjects.FindAsync(id);
+            var celestialObject =  _context.CelestialObjects.Find(id);
 
             if (celestialObject == null)
             {
                 return NotFound();
             }
 
+            celestialObject.Satellites = _context.CelestialObjects.Where(e => e.OrbitedObjectId==id).ToList();
             return Ok(celestialObject);
         }
 
-        // PUT: api/CelestialObject/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutCelestialObject([FromRoute] int id, [FromBody] CelestialObject celestialObject)
+      [HttpGet("{name}")]
+      public IActionResult GetByName(string name)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            if (id != celestialObject.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(celestialObject).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!CelestialObjectExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
-        }
-
-        // POST: api/CelestialObject
-        [HttpPost]
-        public async Task<IActionResult> PostCelestialObject([FromBody] CelestialObject celestialObject)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            _context.CelestialObjects.Add(celestialObject);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetCelestialObject", new { id = celestialObject.Id }, celestialObject);
-        }
-
-        // DELETE: api/CelestialObject/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCelestialObject([FromRoute] int id)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var celestialObject = await _context.CelestialObjects.FindAsync(id);
-            if (celestialObject == null)
-            {
+            var celestialObjects = _context.CelestialObjects.Where(e => e.Name == name).ToList();
+            if (!celestialObjects.Any())
                 return NotFound();
+            foreach( var celestialObject in celestialObjects)
+            {
+                celestialObject.Satellites = _context.CelestialObjects.Where(e => e.OrbitedObjectId == celestialObject.Id).ToList();
             }
-
-            _context.CelestialObjects.Remove(celestialObject);
-            await _context.SaveChangesAsync();
-
-            return Ok(celestialObject);
+            return Ok(celestialObjects);
         }
-
-        private bool CelestialObjectExists(int id)
+        [HttpGet]
+        public IActionResult GetAll()
         {
-            return _context.CelestialObjects.Any(e => e.Id == id);
+            var celesttialObjects = _context.CelestialObjects.ToList();
+
+            foreach(var celestialObject in celesttialObjects)
+            {
+                celestialObject.Satellites = _context.CelestialObjects.Where(e => e.OrbitedObjectId == celestialObject.Id).ToList();
+            }
+            return Ok(celesttialObjects);
         }
-    }
-}
